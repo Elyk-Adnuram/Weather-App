@@ -1,36 +1,22 @@
-//importing of useState
 import React, { useState } from "react";
-
+import { Oval } from "react-loader-spinner";
+import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFrown } from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
 
-//below const will allow us to use the weather api
-const api = {
-  key: "96e0e6e5968114d3c20ccd4156b7a2db",
+export default function App() {
+  //setting up state variables
+  const [input, setInput] = useState("");
+  const [weather, setWeather] = useState({
+    loading: false,
+    data: {},
+    error: false,
+  });
 
-  base: "https://api.openweathermap.org/data/2.5/",
-};
-
-function App() {
-  //creating useState variable that will used in the fetch method
-  const [query, setQuery] = useState("");
-  const [weather, setWeather] = useState("");
-
-  const search = (evt) => {
-    if (evt.key === "Enter") {
-      //below the fetch GET request is set which will extract the data from the weather api and return it in a json format
-      fetch(`${api.base}weather?q=${query}&units=metric&APPID=${api.key}`)
-        .then((res) => res.json())
-        .then((result) => {
-          setQuery(" ");
-          setWeather(result);
-          console.log(result);
-        });
-    }
-  };
-
-  //this function will provide the current date on the weather app
-  const dateBuilder = (d) => {
-    let months = [
+  //function to obtain current date, e.g. format Monday 01 January
+  const getDate = () => {
+    const months = [
       "January",
       "February",
       "March",
@@ -44,78 +30,98 @@ function App() {
       "November",
       "December",
     ];
-    let days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
 
-    let day = days[d.getDay()];
-    let date = d.getDate();
-    let month = months[d.getMonth()];
-    let year = d.getFullYear();
-    // below returns full current date to the weather app
-    return ` ${day} ${date} ${month} ${year}`;
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    const currentDate = new Date();
+    const month = months[currentDate.getMonth()];
+    const date = `${days[currentDate.getDay()]} ${currentDate.getDate()} ${month}`;
+
+    return date;
   };
+
+  //obtain data from API
+  const search = async (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      setInput("");
+      setWeather({ ...weather, loading: true });
+      const url = "https://api.openweathermap.org/data/2.5/weather";
+      const apiKey = process.env.REACT_APP_API_KEY;
+      await axios
+        .get(url, {
+          params: {
+            q: input,
+            units: "metric",
+            appid: apiKey,
+          },
+        })
+        .then((res) => {
+          setWeather({ data: res.data, loading: false, error: false });
+        })
+        .catch((error) => {
+          setWeather({ ...weather, data: {}, error: true });
+          setInput("");
+        });
+    }
+  };
+
   return (
-    //below links import a google font and if weather is more than 19 degrees the background image changes. the functions written above are called in the below return section
-    <div
-      className={
-        typeof weather.main != "undefined"
-          ? weather.main.temp > 19
-            ? "appWarm"
-            : "appCold"
-          : "appCold"
-      }
-    >
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Rubik+Wet+Paint&display=swap"
-        rel="stylesheet"
-      />
-      <main>
-        <div className="search-box">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search..."
-            onChange={(e) => setQuery(e.target.value)}
-            value={query}
-            onKeyPress={search}
-          />
-        </div>
-        {typeof weather.main != "undefined" ? (
-          <div>
-            <div className="location-box">
-              <div className="location">
-                {weather.name}, {weather.sys.country}
-              </div>
-              <div className="date">{dateBuilder(new Date())}</div>
-              <div className="weather-box">
-                <div className="temp "> {Math.round(weather.main.temp)}°c </div>
-                <div className="weather">{weather.weather[0].main}</div>
-              </div>
-            </div>
+    <div className="App">
+      <h1 className="app-name">Weather App</h1>
+      <section className="search-bar">
+        <input
+          type="text"
+          className="city-search"
+          placeholder="Enter City Name"
+          name="query"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={search}
+        />
+      </section>
+      {weather.loading && (
+        <>
+          <br />
+          <br />
+          <Oval type="Oval" color="black" height={100} width={100} />
+        </>
+      )}
+      {weather.error && (
+        <>
+          <br />
+          <br />
+          <span className="error-message">
+            <FontAwesomeIcon icon={faFrown} />
+            <span style={{ fontSize: "1.25rem" }}>City not found</span>
+          </span>
+        </>
+      )}
+      {weather && weather.data && weather.data.main && (
+        <section>
+          <div className="city-name">
+            <h2>
+              {weather.data.name}, <span>{weather.data.sys.country}</span>
+            </h2>
           </div>
-        ) : (
-          ""
-        )}
-      </main>
+          <div className="date">
+            <span>{getDate()}</span>
+          </div>
+          <div className="icon-temp">
+            <img
+              className=""
+              src={`https://openweathermap.org/img/wn/${weather.data.weather[0].icon}@2x.png`}
+              alt={weather.data.weather[0].description}
+            />
+            {Math.round(weather.data.main.temp)}
+            <sup className="deg">°C</sup>
+          </div>
+          <div className="des-wind">
+            <p>{weather.data.weather[0].description.toUpperCase()}</p>
+            <p>Wind Speed: {weather.data.wind.speed}m/s</p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
-
-export default App;
-
-/*
-References
-https://home.openweathermap.org/api_keys
-https://www.youtube.com/watch?v=GuA0_Z1llYU
-https://reactjs.org/docs/lifting-state-up.html
-https://www.36n.co/how-to
-*/
