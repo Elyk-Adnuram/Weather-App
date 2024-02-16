@@ -148,3 +148,8 @@ html {
 .App {
   animation: entrance 2s ease-in 0s 1 normal forwards;
 }
+
+@media screen and (max-width: 600px) {
+ body {
+   max-width: 480px;
+}
