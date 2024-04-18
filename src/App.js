@@ -73,7 +73,7 @@ export default function App() {
         <input
           type="text"
           className="city-search"
-          placeholder="Enter City Name"
+          placeholder="Enter City Name and Press Enter"
           name="query"
           value={input}
           onChange={(e) => setInput(e.target.value)}
