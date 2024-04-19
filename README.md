@@ -43,7 +43,7 @@ Weather API used from https://openweathermap.org/api
 - Open weather API
 
 
-## Acknowledgements
+## Useful Resources
 
  - [Readme Creator](https://readme.so/editor)
  - [GeeksForGeeks](https://www.geeksforgeeks.org/)
