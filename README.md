@@ -6,14 +6,12 @@ An easy to use and pleasant to look at weather application. Enter any city name 
 
 ## Deployment
 
-To deploy this project run
-`npm start`
+The project has been deployed to Netlify and the live version can be viewed at:
+https://warm-flan-492f01.netlify.app/
 
+Alternatively, clone the repository to your local machine and install the node modules with the command 'npm install' thereafter to run this project use`npm start`
 Runs the app in the development mode.
 Open http://localhost:3000 to view it in your browser.
-
-Live version can be viewed at:
-https://warm-flan-492f01.netlify.app/
 
 
 ## Environment Variables
