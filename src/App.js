@@ -1,127 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Oval } from "react-loader-spinner";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFrown } from "@fortawesome/free-solid-svg-icons";
+import { faFrown, faSearch } from "@fortawesome/free-solid-svg-icons";
+import API_CONFIG from "./configs/API_CONFIG";
+import WeatherDisplay from "./components/WeatherDisplay";
 import "./App.css";
 
 export default function App() {
-  //setting up state variables
   const [input, setInput] = useState("");
   const [weather, setWeather] = useState({
     loading: false,
-    data: {},
+    data: null,
     error: false,
   });
 
-  //function to obtain current date, e.g. format Monday 01 January
-  const getDate = () => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
+  // Debounced search function using useCallback
+  const searchWeather = useCallback(
+    async (event) => {
+      if (event.key === "Enter" || event.type === "click") {
+        event.preventDefault();
+        setInput("");
+        setWeather((prev) => ({ ...prev, loading: true, error: false }));
 
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        try {
+          const response = await axios.get(API_CONFIG.baseURL, {
+            params: {
+              ...API_CONFIG.params,
+              q: input,
+            },
+          });
 
-    const currentDate = new Date();
-    const month = months[currentDate.getMonth()];
-    const date = `${days[currentDate.getDay()]} ${currentDate.getDate()} ${month}`;
-
-    return date;
-  };
-
-  //obtain data from API
-  const search = async (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      setInput("");
-      setWeather({ ...weather, loading: true });
-      const url = "https://api.openweathermap.org/data/2.5/weather";
-      const apiKey = process.env.REACT_APP_API_KEY;
-      await axios
-        .get(url, {
-          params: {
-            q: input,
-            units: "metric",
-            appid: apiKey,
-          },
-        })
-        .then((res) => {
-          setWeather({ data: res.data, loading: false, error: false });
-        })
-        .catch((error) => {
-          setWeather({ ...weather, data: {}, error: true });
+          setWeather({
+            data: response.data,
+            loading: false,
+            error: false,
+          });
+        } catch (error) {
+          setWeather({
+            data: null,
+            loading: false,
+            error: true,
+          });
           setInput("");
-        });
-    }
-  };
+        }
+      }
+    },
+    [input]
+  );
 
   return (
-    <div className="App">
-      <h1 className="app-name">Weather App</h1>
-      <section className="search-bar">
+    <div className="weather-app">
+      <h1 className="app-name">Brick Tamland Weather</h1>
+      <div className="search-container">
         <input
           type="text"
           className="city-search"
-          placeholder="Enter City Name and Press Enter"
-          name="query"
+          placeholder="Enter City Name"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={search}
+          onKeyDown={searchWeather}
+          aria-label="Search for a city"
         />
-      </section>
-      {weather.loading && (
-        <>
-          <br />
-          <br />
-          <Oval type="Oval" color="black" height={100} width={100} />
-        </>
-      )}
-      {weather.error && (
-        <>
-          <br />
-          <br />
-          <span className="error-message">
+        <button className="search-button" onClick={searchWeather} aria-label="Search">
+          <FontAwesomeIcon icon={faSearch} />
+        </button>
+      </div>
+
+      <div className="weather-display">
+        {weather.loading && (
+          <div className="loader">
+            <Oval color="var(--primary-color)" height={60} width={60} />
+          </div>
+        )}
+
+        {weather.error && (
+          <div className="error-message">
             <FontAwesomeIcon icon={faFrown} />
-            <span style={{ fontSize: "1.25rem" }}>City not found</span>
-          </span>
-        </>
-      )}
-      {weather && weather.data && weather.data.main && (
-        <section>
-          <div className="city-name">
-            <h2>
-              {weather.data.name}, <span>{weather.data.sys.country}</span>
-            </h2>
+            <span>City not found</span>
           </div>
-          <div className="date">
-            <span>{getDate()}</span>
-          </div>
-          <div className="icon-temp">
-            <img
-              className=""
-              src={`https://openweathermap.org/img/wn/${weather.data.weather[0].icon}@2x.png`}
-              alt={weather.data.weather[0].description}
-            />
-            {Math.round(weather.data.main.temp)}
-            <sup className="deg">°C</sup>
-          </div>
-          <div className="des-wind">
-            <p>{weather.data.weather[0].description.toUpperCase()}</p>
-            <p>Wind Speed: {weather.data.wind.speed}m/s</p>
-          </div>
-        </section>
-      )}
+        )}
+
+        {weather.data && <WeatherDisplay data={weather.data} />}
+      </div>
     </div>
   );
 }
